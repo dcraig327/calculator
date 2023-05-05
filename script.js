@@ -30,6 +30,42 @@ function operate(a, operator, b) {
   }
 }
 
+firstNumber = [];
+operator = undefined;
+secondNumber = [];
+
+function pressNumber(number) {
+  // 10 is raddix to allow leading with a 0 on old browsers
+  if (!operator) {
+    firstNumber.push(Number(number, 10));
+    display.textContent = firstNumber.join("");
+  } else {
+    secondNumber.push(Number(number, 10));
+    display.textContent = secondNumber.join("");
+  }
+}
+
+function resetOperation() {
+  firstNumber = [];
+  operator = undefined;
+  secondNumber = [];
+}
+
+function clearDisplay() {
+  display.textContent = "";
+  resetOperation();
+}
+
+function pressCalculate() {
+  result = operate(
+    Number(firstNumber.join(""), 10),
+    operator,
+    Number(secondNumber.join(""), 10)
+  );
+  resetOperation();
+  display.textContent = String(result);
+}
+
 function buttonPress() {
   switch (this.textContent) {
     case "0":
@@ -42,7 +78,19 @@ function buttonPress() {
     case "7":
     case "8":
     case "9":
-      display.textContent = this.textContent;
+      pressNumber(this.textContent);
+      break;
+    case "/":
+    case "*":
+    case "-":
+    case "+":
+      operator = this.textContent;
+      break;
+    case "=":
+      pressCalculate();
+      break;
+    case "C":
+      clearDisplay();
       break;
     default:
       break;
