@@ -1,6 +1,29 @@
-let display;
+//set character length and round numbers to fit
+//css for proper character size
+
+let DEBUG = true;
+let display = undefined;
+
+firstNumberString = undefined;
+operator = undefined;
+secondNumberString = undefined;
 
 ////////////////////////////////////////////////////////////////////////////////
+if (!DEBUG) {
+  console.assert = function () {};
+  console.log = function () {};
+}
+
+function roundTo(n, digits) {
+  if (digits === undefined) {
+    digits = 0;
+  }
+
+  var multiplicator = Math.pow(10, digits);
+  n = parseFloat((n * multiplicator).toFixed(11));
+  return Math.round(n) / multiplicator;
+}
+
 function add(a, b) {
   return a + b;
 }
@@ -15,58 +38,146 @@ function divide(a, b) {
 }
 
 function operate(a, operator, b) {
+  divideByZero = false;
+  result = 0;
   switch (operator) {
     case "+":
-      return add(a, b);
+      result = add(a, b);
+      break;
     case "-":
-      return subtract(a, b);
+      result = subtract(a, b);
+      break;
     case "*":
-      return multiply(a, b);
+      result = multiply(a, b);
+      break;
     case "/":
-      return divide(a, b);
+      if (b == 0) {
+        divideByZero = true;
+      } else {
+        result = divide(a, b);
+      }
+      break;
     default:
       console.log("Not a valid operator.");
-      break;
+      return;
   }
-}
-
-firstNumber = [];
-operator = undefined;
-secondNumber = [];
-
-function pressNumber(number) {
-  // 10 is raddix to allow leading with a 0 on old browsers
-  if (!operator) {
-    firstNumber.push(Number(number, 10));
-    display.textContent = firstNumber.join("");
+  if (divideByZero) {
+    resetOperation();
+    render("Why U Mad? It Only Game.");
   } else {
-    secondNumber.push(Number(number, 10));
-    display.textContent = secondNumber.join("");
+    render(String(result));
   }
+  return result;
 }
 
+// if argument is passed, that is saved as firstNumber,operator
 function resetOperation() {
-  firstNumber = [];
-  operator = undefined;
-  secondNumber = [];
+  if (arguments[0]) {
+    firstNumberString = arguments[0];
+  } else {
+    firstNumberString = "0";
+  }
+  if (arguments[1]) {
+    operator = arguments[1];
+  } else {
+    operator = undefined;
+  }
+  secondNumberString = undefined;
 }
 
 function clearDisplay() {
-  display.textContent = "";
   resetOperation();
+  render(firstNumberString);
+}
+
+function calculate() {
+  a = Number(firstNumberString);
+  b = Number(secondNumberString);
+  result = operate(a, operator, b);
+  console.log(`calculate(${a}, ${operator}, ${b}) = ${result}`);
+  return result;
 }
 
 function pressCalculate() {
-  result = operate(
-    Number(firstNumber.join(""), 10),
-    operator,
-    Number(secondNumber.join(""), 10)
+  if (operator) {
+    if (secondNumberString === undefined) {
+      secondNumberString = firstNumberString;
+    }
+    result = calculate();
+    resetOperation(result);
+  }
+}
+
+function pressNumber(numberPressedString) {
+  // 10 is raddix to allow leading with a 0 on old browsers
+  outputString = undefined;
+
+  if (operator) {
+    if (secondNumberString && secondNumberString != 0) {
+      secondNumberString += numberPressedString;
+    } else {
+      secondNumberString = numberPressedString;
+    }
+    outputString = secondNumberString;
+  } else {
+    if (firstNumberString && firstNumberString != 0) {
+      firstNumberString += numberPressedString;
+    } else {
+      firstNumberString = numberPressedString;
+    }
+    outputString = firstNumberString;
+  }
+
+  render(outputString);
+}
+
+function pressOperator(operatorPressed) {
+  if (operator) {
+    if (secondNumberString === undefined) {
+      secondNumberString = firstNumberString;
+    }
+    result = calculate();
+    resetOperation(result, operatorPressed);
+  } else {
+    operator = operatorPressed;
+  }
+}
+
+function logGlobalVariables() {
+  console.log(
+    `a:${firstNumberString}\top:${operator}\tb:${secondNumberString}`
   );
-  resetOperation();
-  display.textContent = String(result);
+}
+
+function render(string) {
+  // if (string.length > 8) {
+  //   console.log(string);
+  //   number = Number(string, 10);
+  //   console.log(number);
+  //   number = roundTo(number, 8);
+  //   console.log(number);
+  //   string = String(number);
+  //   console.log(string);
+  // }
+  display.textContent = string;
+}
+
+function pressDecimal() {
+  if (operator) {
+    if (!secondNumberString.includes(".")) {
+      secondNumberString += ".";
+    }
+  } else {
+    if (!firstNumberString.includes(".")) {
+      firstNumberString += ".";
+      render(firstNumberString);
+    }
+  }
 }
 
 function buttonPress() {
+  console.group(`INPUT:${this.textContent}`);
+  logGlobalVariables();
   switch (this.textContent) {
     case "0":
     case "1":
@@ -80,11 +191,20 @@ function buttonPress() {
     case "9":
       pressNumber(this.textContent);
       break;
+    case ".":
+      pressDecimal();
+      break;
+    case "+/-":
+      break;
+    case "%":
+      break;
+    case "1/x":
+      break;
     case "/":
     case "*":
     case "-":
     case "+":
-      operator = this.textContent;
+      pressOperator(this.textContent);
       break;
     case "=":
       pressCalculate();
@@ -94,11 +214,17 @@ function buttonPress() {
       break;
     default:
       break;
+    //invert
+    //percent
+    //decimal
   }
+  logGlobalVariables();
+  console.groupEnd();
 }
 
 function init() {
   display = document.querySelector(".display");
+  clearDisplay();
 
   let buttons = document.querySelectorAll("button");
   buttons.forEach(button => {
